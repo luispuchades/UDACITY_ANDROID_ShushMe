@@ -48,8 +48,7 @@
                 android:paddingBottom="4dp"
                 android:paddingRight="8dp"
                 android:paddingTop="4dp"
-                android:src="@drawable/ic_globe_primary_24dp"
-                android:paddingEnd="8dp" />
+                android:src="@drawable/ic_globe_primary_24dp" />
 
             <Switch
                 android:id="@+id/enable_switch"
@@ -71,8 +70,7 @@
                 android:paddingBottom="4dp"
                 android:paddingRight="8dp"
                 android:paddingTop="4dp"
-                android:src="@drawable/ic_my_location_primary_24dp"
-                android:paddingEnd="8dp" />
+                android:src="@drawable/ic_my_location_primary_24dp" />
 
             <TextView
                 android:layout_width="wrap_content"
@@ -92,9 +90,7 @@
                     android:layout_height="wrap_content"
                     android:layout_alignParentRight="true"
                     android:layout_marginRight="8dp"
-                    android:onClick="onLocationPermissionClicked"
-                    android:layout_alignParentEnd="true"
-                    android:layout_marginEnd="8dp" />
+                    android:onClick="onLocationPermissionClicked" />
 
             </RelativeLayout>
         </LinearLayout>
@@ -131,8 +127,6 @@
 
     </LinearLayout>
 
-    <!-- TODO (9) / COMPLETED: Add the "Powered by Google" logo and a link to Google's privacy
-    policy here -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -155,5 +149,6 @@
             android:text="@string/privacy"
             android:textAlignment="center" />
     </LinearLayout>
+
 
 </RelativeLayout>

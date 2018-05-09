@@ -18,6 +18,7 @@ package com.example.android.shushme;
 
 import android.content.ContentValues;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.net.Uri;
@@ -31,6 +32,8 @@ import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.View;
 import android.widget.CheckBox;
+import android.widget.CompoundButton;
+import android.widget.Switch;
 import android.widget.Toast;
 
 import com.example.android.shushme.provider.PlaceContract;
@@ -63,7 +66,9 @@ public class MainActivity extends AppCompatActivity implements
     // Member variables
     private PlaceListAdapter mAdapter;
     private RecyclerView mRecyclerView;
+    private boolean mIsEnabled;
     private GoogleApiClient mClient;
+    private Geofencing mGeofencing;
 
     /**
      * Called when the activity is starting
@@ -78,10 +83,30 @@ public class MainActivity extends AppCompatActivity implements
         // Set up the recycler view
         mRecyclerView = (RecyclerView) findViewById(R.id.places_list_recycler_view);
         mRecyclerView.setLayoutManager(new LinearLayoutManager(this));
-        // TODO (3) / COMPLETED: Modify the Adapter to take a PlaceBuffer in the constructor
         mAdapter = new PlaceListAdapter(this, null);
         mRecyclerView.setAdapter(mAdapter);
 
+        // TODO (9) / COMPLETED: Create a boolean SharedPreference to store the state of the "Enable
+        // Geofences" switch and initialize the switch based on the value of that SharedPreference
+
+        // TODO (10) / COMPLETED: Handle the switch's change event and Register/Unregister
+        // geofences based on the value of isChecked as well as set a private boolean mIsEnabled
+        // to the current switch's state
+        Switch onOffSwitch = (Switch) findViewById(R.id.enable_switch);
+        mIsEnabled = getPreferences(MODE_PRIVATE).getBoolean(getString(R.string.setting_enabled),
+                false);
+        onOffSwitch.setChecked(mIsEnabled);
+        onOffSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                SharedPreferences.Editor editor = getPreferences(MODE_PRIVATE).edit();
+                editor.putBoolean(getString(R.string.setting_enabled), isChecked);
+                mIsEnabled = isChecked;
+                editor.commit();
+                if (isChecked) mGeofencing.registerAllGeofences();
+                else mGeofencing.unRegisterAllGeofences();
+            }
+        });
 
         // Build up the LocationServices API client
         // Uses the addApi method to request the LocationServices API
@@ -94,21 +119,41 @@ public class MainActivity extends AppCompatActivity implements
                 .enableAutoManage(this, this)
                 .build();
 
+        mGeofencing = new Geofencing(this, mClient);
+
+        // TODO (1) / COMPLETED: Create a Geofencing class with a Context and GoogleApiClient
+        // constructor that initializes a private member ArrayList of Geofences called mGeofenceList
+
+        // TODO (2) / COMPLETED: Inside Geofencing, implement a public method called
+        // updateGeofencesList that given a PlaceBuffer will create a Geofence object for each
+        // Place using Geofence.Builder and add that Geofence to mGeofenceList
+
+        // TODO (3) / COMPLETED: Inside Geofencing, implement a private helper method called
+        // getGeofencingRequest that uses GeofencingRequest.Builder to return a GeofencingRequest
+        // object from the Geofence list
+
+        // TODO (4) / COMPLETED: Create a GeofenceBroadcastReceiver class that extends
+        // BroadcastReceiver and override onReceive() to simply log a message when called. Don't
+        // forget to add a receiver tag in the Manifest
+
+        // TODO (5) / COMPLETED:Inside Geofencing, implement a private helper method called
+        // getGeofencePendingIntent that returns a PendingIntent for the
+        // GeofenceBroadcastReceiver class
+
+        // TODO (6) / COMPLETED: Inside Geofencing, implement a public method called
+        // registerAllGeofences that registers the GeofencingRequest by calling LocationServices
+        // .GeofencingApi.addGeofences using the helper functions getGeofencingRequest() and
+        // getGeofencePendingIntent()
+
+        // TODO (7) / COMPLETED: Inside Geofencing, implement a public method called
+        // unRegisterAllGeofences that
+        // unregisters all geofences by calling LocationServices.GeofencingApi.removeGeofences
+        // using the helper function getGeofencePendingIntent()
+
+        // TODO (8) / COMPLETED: Create a new instance of Geofencing using "this" as the context
+        // and mClient as the client
+
     }
-
-    // TODO (1) / COMPLETED: Implement a method called refreshPlacesData that:
-    // - Queries all the locally stored Places IDs
-    // - Calls Places.GeoDataApi.getPlaceById with that list of IDs
-    // Note: When calling Places.GeoDataApi.getPlaceById use the same GoogleApiClient created
-    // in MainActivity's onCreate (you will have to declare it as a private member)
-
-
-
-    //TODO (8) / COMPLETED Set the getPlaceById callBack so that onResult calls the Adapter's
-    // swapPlaces with the result
-
-    //TODO (2) / COMPLETED: call refreshPlacesData in GoogleApiClient's onConnected and in the Add
-    // New Place button click event
 
     /***
      * Called when the Google API Client is successfully connected
@@ -117,6 +162,7 @@ public class MainActivity extends AppCompatActivity implements
      */
     @Override
     public void onConnected(@Nullable Bundle connectionHint) {
+        refreshPlacesData();
         Log.i(TAG, "API Client Connection Successful!");
     }
 
@@ -143,17 +189,16 @@ public class MainActivity extends AppCompatActivity implements
     public void refreshPlacesData() {
         Uri uri = PlaceContract.PlaceEntry.CONTENT_URI;
         Cursor data = getContentResolver().query(
-          uri,
-          null,
-          null,
-          null,
+                uri,
+                null,
+                null,
+                null,
                 null);
 
         if (data == null || data.getCount() == 0) return;
         List<String> guids = new ArrayList<String>();
         while (data.moveToNext()) {
-            guids.add(data.getString(data.getColumnIndex(PlaceContract.PlaceEntry
-                    .COLUMN_PLACE_ID)));
+            guids.add(data.getString(data.getColumnIndex(PlaceContract.PlaceEntry.COLUMN_PLACE_ID)));
         }
         PendingResult<PlaceBuffer> placeResult = Places.GeoDataApi.getPlaceById(mClient,
                 guids.toArray(new String[guids.size()]));
@@ -161,6 +206,10 @@ public class MainActivity extends AppCompatActivity implements
             @Override
             public void onResult(@NonNull PlaceBuffer places) {
                 mAdapter.swapPlaces(places);
+                // TODO (11) / COMPLETED: Call updateGeofenceList and registerAllGeofences if
+                // mIsEnabled is true
+                mGeofencing.updateGeofencesList(places);
+                if (mIsEnabled) mGeofencing.registerAllGeofences();
             }
         });
     }
@@ -171,16 +220,14 @@ public class MainActivity extends AppCompatActivity implements
      * @param view
      */
     public void onAddPlaceButtonClicked(View view) {
-        if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission
-                .ACCESS_FINE_LOCATION)
+        if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION)
                 != PackageManager.PERMISSION_GRANTED) {
-            Toast.makeText(this, getString(R.string.need_location_permission_message), Toast
-                    .LENGTH_LONG).show();
+            Toast.makeText(this, getString(R.string.need_location_permission_message), Toast.LENGTH_LONG).show();
             return;
         }
         try {
-            // Start a new Activity for the Place Picker API, this will trigger {@code
-            // #onActivityResult} when a place is selected or with the user cancels.
+            // Start a new Activity for the Place Picker API, this will trigger {@code #onActivityResult}
+            // when a place is selected or with the user cancels.
             PlacePicker.IntentBuilder builder = new PlacePicker.IntentBuilder();
             Intent i = builder.build(this);
             startActivityForResult(i, PLACE_PICKER_REQUEST);
@@ -218,6 +265,9 @@ public class MainActivity extends AppCompatActivity implements
             ContentValues contentValues = new ContentValues();
             contentValues.put(PlaceContract.PlaceEntry.COLUMN_PLACE_ID, placeID);
             getContentResolver().insert(PlaceContract.PlaceEntry.CONTENT_URI, contentValues);
+
+            // Get live data information
+            refreshPlacesData();
         }
     }
 
@@ -228,8 +278,7 @@ public class MainActivity extends AppCompatActivity implements
         // Initialize location permissions checkbox
         CheckBox locationPermissions = (CheckBox) findViewById(R.id.location_permission_checkbox);
         if (ActivityCompat.checkSelfPermission(MainActivity.this,
-                android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager
-                .PERMISSION_GRANTED) {
+                android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             locationPermissions.setChecked(false);
         } else {
             locationPermissions.setChecked(true);
