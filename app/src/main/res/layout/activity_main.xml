@@ -93,9 +93,6 @@
                     android:onClick="onLocationPermissionClicked" />
 
             </RelativeLayout>
-
-        <!-- TODO (1) / COMPLETED: Add a LinearLayout with the permissions CheckBox and UI -->
-
         </LinearLayout>
 
         <LinearLayout
@@ -132,7 +129,6 @@
                     android:onClick="onRingerPermissionsClicked" />
 
             </RelativeLayout>
-
         </LinearLayout>
 
 
