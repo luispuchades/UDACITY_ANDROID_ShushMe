@@ -198,7 +198,8 @@ public class PlaceContentProvider extends ContentProvider {
                 // Get the place ID from the URI path
                 String id = uri.getPathSegments().get(1);
                 // Use selections/selectionArgs to filter for this ID
-                placesUpdated = db.update(PlaceEntry.TABLE_NAME, values, "_id=?", new String[]{id});
+                placesUpdated = db.update(PlaceEntry.TABLE_NAME, values, "_id=?", new
+                        String[]{id});
                 break;
             // Default exception
             default:

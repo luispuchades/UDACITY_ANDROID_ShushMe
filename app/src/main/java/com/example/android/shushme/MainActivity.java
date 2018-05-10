@@ -16,13 +16,16 @@ package com.example.android.shushme;
  * limitations under the License.
  */
 
+import android.app.NotificationManager;
 import android.content.ContentValues;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
+import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
@@ -86,15 +89,9 @@ public class MainActivity extends AppCompatActivity implements
         mAdapter = new PlaceListAdapter(this, null);
         mRecyclerView.setAdapter(mAdapter);
 
-        // TODO (9) / COMPLETED: Create a boolean SharedPreference to store the state of the "Enable
-        // Geofences" switch and initialize the switch based on the value of that SharedPreference
-
-        // TODO (10) / COMPLETED: Handle the switch's change event and Register/Unregister
-        // geofences based on the value of isChecked as well as set a private boolean mIsEnabled
-        // to the current switch's state
+        // Initialize the switch state and Handle enable/disable switch change
         Switch onOffSwitch = (Switch) findViewById(R.id.enable_switch);
-        mIsEnabled = getPreferences(MODE_PRIVATE).getBoolean(getString(R.string.setting_enabled),
-                false);
+        mIsEnabled = getPreferences(MODE_PRIVATE).getBoolean(getString(R.string.setting_enabled), false);
         onOffSwitch.setChecked(mIsEnabled);
         onOffSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
@@ -106,6 +103,7 @@ public class MainActivity extends AppCompatActivity implements
                 if (isChecked) mGeofencing.registerAllGeofences();
                 else mGeofencing.unRegisterAllGeofences();
             }
+
         });
 
         // Build up the LocationServices API client
@@ -120,38 +118,6 @@ public class MainActivity extends AppCompatActivity implements
                 .build();
 
         mGeofencing = new Geofencing(this, mClient);
-
-        // TODO (1) / COMPLETED: Create a Geofencing class with a Context and GoogleApiClient
-        // constructor that initializes a private member ArrayList of Geofences called mGeofenceList
-
-        // TODO (2) / COMPLETED: Inside Geofencing, implement a public method called
-        // updateGeofencesList that given a PlaceBuffer will create a Geofence object for each
-        // Place using Geofence.Builder and add that Geofence to mGeofenceList
-
-        // TODO (3) / COMPLETED: Inside Geofencing, implement a private helper method called
-        // getGeofencingRequest that uses GeofencingRequest.Builder to return a GeofencingRequest
-        // object from the Geofence list
-
-        // TODO (4) / COMPLETED: Create a GeofenceBroadcastReceiver class that extends
-        // BroadcastReceiver and override onReceive() to simply log a message when called. Don't
-        // forget to add a receiver tag in the Manifest
-
-        // TODO (5) / COMPLETED:Inside Geofencing, implement a private helper method called
-        // getGeofencePendingIntent that returns a PendingIntent for the
-        // GeofenceBroadcastReceiver class
-
-        // TODO (6) / COMPLETED: Inside Geofencing, implement a public method called
-        // registerAllGeofences that registers the GeofencingRequest by calling LocationServices
-        // .GeofencingApi.addGeofences using the helper functions getGeofencingRequest() and
-        // getGeofencePendingIntent()
-
-        // TODO (7) / COMPLETED: Inside Geofencing, implement a public method called
-        // unRegisterAllGeofences that
-        // unregisters all geofences by calling LocationServices.GeofencingApi.removeGeofences
-        // using the helper function getGeofencePendingIntent()
-
-        // TODO (8) / COMPLETED: Create a new instance of Geofencing using "this" as the context
-        // and mClient as the client
 
     }
 
@@ -206,8 +172,6 @@ public class MainActivity extends AppCompatActivity implements
             @Override
             public void onResult(@NonNull PlaceBuffer places) {
                 mAdapter.swapPlaces(places);
-                // TODO (11) / COMPLETED: Call updateGeofenceList and registerAllGeofences if
-                // mIsEnabled is true
                 mGeofencing.updateGeofencesList(places);
                 if (mIsEnabled) mGeofencing.registerAllGeofences();
             }
@@ -284,6 +248,25 @@ public class MainActivity extends AppCompatActivity implements
             locationPermissions.setChecked(true);
             locationPermissions.setEnabled(false);
         }
+
+        //TODO (3) / COMPLETED: Initialize ringer permissions checkbox
+        CheckBox ringerPermissions = (CheckBox) findViewById(R.id.ringer_permissions_checkbox);
+        NotificationManager nm = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+        //Check if the API supports such permission change and check if permission is granted
+        if(Build.VERSION.SDK_INT >= 24 && !nm.isNotificationPolicyAccessGranted()) {
+            ringerPermissions.setChecked(false);
+        } else {
+            ringerPermissions.setChecked(true);
+            ringerPermissions.setEnabled(false);
+        }
+
+    }
+
+    // TODO (2) / COMPLETED: Implement onRingerPermissionsClicked to launch
+    // ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS
+    public void onRingerPermissionsClicked(View view) {
+        Intent intent = new Intent(Settings.ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS);
+        startActivity(intent);
     }
 
     public void onLocationPermissionClicked(View view) {
